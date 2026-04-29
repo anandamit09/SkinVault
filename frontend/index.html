@@ -3,52 +3,109 @@
 <head>
     <title>SkinVault</title>
     <style>
-        body { font-family: Arial; padding: 20px; }
-        .skin { border: 1px solid #ccc; padding: 10px; margin: 10px; }
-        button { margin-top: 5px; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 30px;
+            background: linear-gradient(to right, #141e30, #243b55);
+            color: white;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            background: rgba(255,255,255,0.08);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        input {
+            padding: 10px;
+            margin: 5px;
+            border: none;
+            border-radius: 8px;
+            width: 200px;
+        }
+
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            background: #7b61ff;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        #skins {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .skin {
+            background: rgba(255,255,255,0.08);
+            border-radius: 15px;
+            overflow: hidden;
+            text-align: center;
+            padding: 15px;
+        }
+
+        .skin img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
     </style>
 </head>
 <body>
 
-<h1>🎮 SkinVault</h1>
+    <h1>🎮 SkinVault</h1>
 
-<!-- LOGIN -->
-<h2>Login</h2>
-<input id="username" placeholder="Username">
-<input id="password" placeholder="Password" type="password">
-<button onclick="login()">Login</button>
+    <div class="section">
+        <h2>Login</h2>
+        <input id="username" placeholder="Username">
+        <input id="password" type="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+        <p id="loginResult"></p>
+    </div>
 
-<p id="loginStatus"></p>
+    <div class="section">
+        <h2>Wallet</h2>
+        <button onclick="checkWallet()">Check Balance</button>
+        <p id="walletResult"></p>
+    </div>
 
-<hr>
+    <div class="section">
+        <h2>Store</h2>
+        <button onclick="loadSkins()">Load Skins</button>
+        <div id="skins"></div>
+    </div>
 
-<!-- WALLET -->
-<h2>Wallet</h2>
-<button onclick="getWallet()">Check Balance</button>
-<p id="wallet"></p>
-
-<hr>
-
-<!-- STORE -->
-<h2>Store</h2>
-<button onclick="loadSkins()">Load Skins</button>
-<div id="skins"></div>
-
-<hr>
-
-<!-- ORDERS -->
-<h2>Orders</h2>
-<button onclick="loadOrders()">View Orders</button>
-<div id="orders"></div>
+    <div class="section">
+        <h2>Orders</h2>
+        <button onclick="viewOrders()">View Orders</button>
+        <div id="orders"></div>
+    </div>
 
 <script>
-let user_id = null;
+let userId = null;
 
-// LOGIN
 function login() {
     fetch("http://127.0.0.1:5001/login", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: {"Content-Type":"application/json"},
         body: JSON.stringify({
             username: document.getElementById("username").value,
             password: document.getElementById("password").value
@@ -56,25 +113,19 @@ function login() {
     })
     .then(res => res.json())
     .then(data => {
-        if(data.user_id){
-            user_id = data.user_id;
-            document.getElementById("loginStatus").innerText = "Logged in as user " + user_id;
-        } else {
-            document.getElementById("loginStatus").innerText = data.error;
-        }
+        userId = data.user_id;
+        document.getElementById("loginResult").innerText = data.message;
     });
 }
 
-// WALLET
-function getWallet() {
-    fetch(`http://127.0.0.1:5001/wallet/${user_id}`)
+function checkWallet() {
+    fetch("http://127.0.0.1:5003/wallet/" + userId)
     .then(res => res.json())
     .then(data => {
-        document.getElementById("wallet").innerText = "Balance: " + data.wallet;
+        document.getElementById("walletResult").innerText = "Balance: ₹" + data.balance;
     });
 }
 
-// LOAD SKINS
 function loadSkins() {
     fetch("http://127.0.0.1:5002/skins")
     .then(res => res.json())
@@ -83,8 +134,9 @@ function loadSkins() {
         data.forEach(skin => {
             html += `
                 <div class="skin">
+                    <img src="${skin.image}" alt="${skin.name}">
                     <h3>${skin.name}</h3>
-                    <p>Price: ${skin.price}</p>
+                    <p>Price: ₹${skin.price}</p>
                     <p>Stock: ${skin.stock}</p>
                     <button onclick="buySkin(${skin.id})">Buy</button>
                 </div>
@@ -94,34 +146,30 @@ function loadSkins() {
     });
 }
 
-// BUY
-function buySkin(skin_id) {
-    fetch("http://127.0.0.1:5004/create-order", {
+function buySkin(skinId) {
+    fetch("http://127.0.0.1:5004/buy", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: {"Content-Type":"application/json"},
         body: JSON.stringify({
-            user_id: user_id,
-            skin_id: skin_id
+            user_id: userId,
+            skin_id: skinId
         })
     })
     .then(res => res.json())
     .then(data => {
-        alert(JSON.stringify(data));
+        alert(data.message);
+        checkWallet();
+        loadSkins();
     });
 }
 
-// LOAD ORDERS
-function loadOrders() {
-    fetch(`http://127.0.0.1:5004/orders/${user_id}`)
+function viewOrders() {
+    fetch("http://127.0.0.1:5004/orders/" + userId)
     .then(res => res.json())
     .then(data => {
         let html = "";
         data.forEach(order => {
-            html += `
-                <div>
-                    Order #${order.order_id} - Skin: ${order.skin_id} - ₹${order.amount}
-                </div>
-            `;
+            html += `<p>Order #${order.id} - ${order.skin_name} - ₹${order.price}</p>`;
         });
         document.getElementById("orders").innerHTML = html;
     });
