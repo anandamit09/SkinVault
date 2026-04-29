@@ -1,0 +1,11 @@
+### Create Order
+POST http://127.0.0.1:5004/create-order
+Content-Type: application/json
+
+{
+  "user_id": 1,
+  "skin_id": 1
+}
+
+### Get Orders
+GET http://127.0.0.1:5004/orders/1

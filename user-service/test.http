@@ -1,0 +1,20 @@
+### Register
+POST http://127.0.0.1:5001/register
+Content-Type: application/json
+
+{
+  "username": "amit",
+  "password": "123"
+}
+
+### Login
+POST http://127.0.0.1:5001/login
+Content-Type: application/json
+
+{
+  "username": "amit",
+  "password": "123"
+}
+
+### Get Wallet
+GET http://127.0.0.1:5001/wallet/1

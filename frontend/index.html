@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SkinVault</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .skin { border: 1px solid #ccc; padding: 10px; margin: 10px; }
+        button { margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<h1>🎮 SkinVault</h1>
+
+<!-- LOGIN -->
+<h2>Login</h2>
+<input id="username" placeholder="Username">
+<input id="password" placeholder="Password" type="password">
+<button onclick="login()">Login</button>
+
+<p id="loginStatus"></p>
+
+<hr>
+
+<!-- WALLET -->
+<h2>Wallet</h2>
+<button onclick="getWallet()">Check Balance</button>
+<p id="wallet"></p>
+
+<hr>
+
+<!-- STORE -->
+<h2>Store</h2>
+<button onclick="loadSkins()">Load Skins</button>
+<div id="skins"></div>
+
+<hr>
+
+<!-- ORDERS -->
+<h2>Orders</h2>
+<button onclick="loadOrders()">View Orders</button>
+<div id="orders"></div>
+
+<script>
+let user_id = null;
+
+// LOGIN
+function login() {
+    fetch("http://127.0.0.1:5001/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            username: document.getElementById("username").value,
+            password: document.getElementById("password").value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.user_id){
+            user_id = data.user_id;
+            document.getElementById("loginStatus").innerText = "Logged in as user " + user_id;
+        } else {
+            document.getElementById("loginStatus").innerText = data.error;
+        }
+    });
+}
+
+// WALLET
+function getWallet() {
+    fetch(`http://127.0.0.1:5001/wallet/${user_id}`)
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("wallet").innerText = "Balance: " + data.wallet;
+    });
+}
+
+// LOAD SKINS
+function loadSkins() {
+    fetch("http://127.0.0.1:5002/skins")
+    .then(res => res.json())
+    .then(data => {
+        let html = "";
+        data.forEach(skin => {
+            html += `
+                <div class="skin">
+                    <h3>${skin.name}</h3>
+                    <p>Price: ${skin.price}</p>
+                    <p>Stock: ${skin.stock}</p>
+                    <button onclick="buySkin(${skin.id})">Buy</button>
+                </div>
+            `;
+        });
+        document.getElementById("skins").innerHTML = html;
+    });
+}
+
+// BUY
+function buySkin(skin_id) {
+    fetch("http://127.0.0.1:5004/create-order", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            user_id: user_id,
+            skin_id: skin_id
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(JSON.stringify(data));
+    });
+}
+
+// LOAD ORDERS
+function loadOrders() {
+    fetch(`http://127.0.0.1:5004/orders/${user_id}`)
+    .then(res => res.json())
+    .then(data => {
+        let html = "";
+        data.forEach(order => {
+            html += `
+                <div>
+                    Order #${order.order_id} - Skin: ${order.skin_id} - ₹${order.amount}
+                </div>
+            `;
+        });
+        document.getElementById("orders").innerHTML = html;
+    });
+}
+</script>
+
+</body>
+</html>

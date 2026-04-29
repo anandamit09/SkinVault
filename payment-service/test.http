@@ -1,0 +1,19 @@
+### Successful Payment
+POST http://127.0.0.1:5003/pay
+Content-Type: application/json
+
+{
+  "transaction_id": "txn123",
+  "user_id": 1,
+  "amount": 200
+}
+
+### Duplicate Payment (Idempotency Test)
+POST http://127.0.0.1:5003/pay
+Content-Type: application/json
+
+{
+  "transaction_id": "txn123",
+  "user_id": 1,
+  "amount": 200
+}
